@@ -18,7 +18,7 @@ excluded_elements = [
 # %% query NOMAD database
 query = ArchiveQuery(
     # url="http://nomad-lab.eu/prod/rae/api",
-    query={"dft.code_name": "VASP",},
+    query={"dft.code_name": "VASP"},
     required={
         "section_run": {
             "section_single_configuration_calculation": {"energy_total": "*",},
@@ -26,37 +26,39 @@ query = ArchiveQuery(
         },
         "section_metadata": {"calc_id": "*"},
     },
-    per_page=10,
-    max=100,
+    per_page=100,
+    max=None,
 )
 
 print(query)
 
 # %% extract values
-hartree_total_energies = [
-    result.section_run[0]
-    .section_single_configuration_calculation[-1]
-    .energy_total.to(units.hartree)
-    for result in query
-]
-
-hartree_total_energy_values = [
-    hartree_total_energy.m for hartree_total_energy in hartree_total_energies
-]
+calc_ids = [result.section_metadata.calc_id for result in query]
 
 formulas = [
     result.section_run[0].section_system[0].chemical_composition_reduced
     for result in query
 ]
 
-calc_ids = [result.section_metadata.calc_id for result in query]
+total_energies = [
+    result.section_run[0].section_single_configuration_calculation[-1].energy_total
+    if len(result.section_run) > 1
+    and len(result.section_run.section_single_configuration_calculation) > 1
+    else None
+    for result in query
+]
+
+hartree_total_energies = [
+    total_energy.to(units.hartree).m if total_energy is not None else None
+    for total_energy in total_energies
+]
 
 # %% combine and save
 df = pd.DataFrame(
     {
         "calc_id": calc_ids,
         "formula": formulas,
-        "hartree_total_energy": hartree_total_energy_values,
+        "hartree_total_energy": hartree_total_energies,
     }
 )
 
