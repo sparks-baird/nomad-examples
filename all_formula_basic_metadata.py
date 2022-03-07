@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import trange
 import pandas as pd
 
-default_page_size = 100
+default_page_size = 10000
 
 # fmt: off
 excluded_elements = [
@@ -65,13 +65,22 @@ def get_data(page_start_calc_id, page_size=default_page_size):
         page_start_calc_id, page_size=page_size
     )
     data = result["data"]
+    formulas = [
+        datum["formula"] if "formula" in datum.keys() else None for datum in data
+    ]
+    calc_ids = [datum["calc_id"] for datum in data]
 
     for _ in trange(n_iter):
         result, next_page_calc_id = post_request(next_page_calc_id)
-        d = result["data"]
-        data.append(d)
+        data = result["data"]
+        formula = [
+            datum["formula"] if "formula" in datum.keys() else "" for datum in data
+        ]
+        calc_id = [datum["calc_id"] for datum in data]
+        formulas = formulas + formula
+        calc_ids = calc_ids + calc_id
 
-    df = pd.DataFrame(data)
+    df = pd.DataFrame({"formula": formulas, "calc_id": calc_ids}).set_index("calc_id")
 
     return df
 
@@ -80,7 +89,7 @@ first_calc_id = "----9KNOtIZc9bDFEWxgjeSRsJrC"
 page_size = 10000
 df = get_data(first_calc_id, page_size=page_size)
 
-df.to_csv("all-formula.csv", index=False)
+df.to_csv("all-formula.csv")
 
 1 + 1
 
@@ -104,3 +113,22 @@ df.to_csv("all-formula.csv", index=False)
 #     result, next_page_calc_id = post_request(next_page_calc_id)
 #     results.append(result)
 # print(results)
+
+# def get_data(page_start_calc_id, page_size=default_page_size):
+#     result, next_page_calc_id, n_iter = post_first_request(
+#         page_start_calc_id, page_size=page_size
+#     )
+#     data = dict()
+#     d = result["data"]
+#     # https://stackoverflow.com/questions/23190074/python-dictionary-error-attributeerror-list-object-has-no-attribute-keys
+#     data[d.pop("calc_id")] = d
+
+#     n_iter = 3
+#     for _ in trange(n_iter):
+#         result, next_page_calc_id = post_request(next_page_calc_id)
+#         d = result["data"]
+#         data[d.pop("calc_id")] = d
+
+#     df = pd.DataFrame(data, index=[0])
+
+#     return df
