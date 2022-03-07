@@ -4,6 +4,8 @@ import numpy as np
 from tqdm import trange
 import pandas as pd
 
+default_page_size = 100
+
 # fmt: off
 excluded_elements = [
     "He", "Ne", "Ar", "Kr", "Xe", "Rn", "U", "Th", "Rn", "Tc", "Po", "Pu", "Pa",
@@ -11,7 +13,7 @@ excluded_elements = [
 # fmt: on
 
 
-def get_query_dict(page_after_value, page_size=10):
+def get_query_dict(page_after_value, page_size=default_page_size):
     d = {
         "query": {
             "and": [{"domain": "dft", "not": {"atoms": {"any": excluded_elements}}}]
@@ -23,7 +25,10 @@ def get_query_dict(page_after_value, page_size=10):
 
 
 def post_request(
-    page_start_calc_id, return_next_page=False, return_n_iter=False, page_size=10
+    page_start_calc_id,
+    return_next_page=True,
+    return_n_iter=False,
+    page_size=default_page_size,
 ):
     response = requests.post(
         "http://nomad-lab.eu/prod/rae/api/v1/entries/query",
@@ -45,7 +50,7 @@ def post_request(
         return result
 
 
-def post_first_request(page_start_calc_id, page_size=10):
+def post_first_request(page_start_calc_id, page_size=default_page_size):
     result, next_page_calc_id, n_iter = post_request(
         page_start_calc_id,
         return_next_page=True,
@@ -54,22 +59,28 @@ def post_first_request(page_start_calc_id, page_size=10):
     )
     return result, next_page_calc_id, n_iter
 
-def get_data(page_start_calc_id, page_size=10):
-    result, next_page_calc_id, n_iter = post_first_request(page_start_calc_id, page_size=page_size)
+
+def get_data(page_start_calc_id, page_size=default_page_size):
+    result, next_page_calc_id, n_iter = post_first_request(
+        page_start_calc_id, page_size=page_size
+    )
     data = result["data"]
-    
+
     for _ in trange(n_iter):
         result, next_page_calc_id = post_request(next_page_calc_id)
         d = result["data"]
         data.append(d)
-        
+
     df = pd.DataFrame(data)
-    
+
     return df
-        
+
+
 first_calc_id = "----9KNOtIZc9bDFEWxgjeSRsJrC"
-page_size = 10
+page_size = 10000
 df = get_data(first_calc_id, page_size=page_size)
+
+df.to_csv("all-formula.csv", index=False)
 
 1 + 1
 
