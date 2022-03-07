@@ -33,7 +33,7 @@ def post_request(
     next_page_calc_id = result["pagination"]["next_page_after_value"]
 
     n_entries = result["pagination"]["total"]
-    n_iter = np.ceil((n_entries - page_size) / page_size)
+    n_iter = int(np.ceil((n_entries - page_size) / page_size))
 
     if return_next_page and return_n_iter:
         return result, next_page_calc_id, n_iter
