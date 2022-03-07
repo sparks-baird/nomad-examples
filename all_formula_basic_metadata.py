@@ -1,3 +1,4 @@
+from itertools import chain
 import requests
 import json
 import numpy as np
@@ -64,23 +65,20 @@ def get_data(page_start_calc_id, page_size=default_page_size):
     result, next_page_calc_id, n_iter = post_first_request(
         page_start_calc_id, page_size=page_size
     )
-    data = result["data"]
-    formulas = [
-        datum["formula"] if "formula" in datum.keys() else None for datum in data
-    ]
-    calc_ids = [datum["calc_id"] for datum in data]
+    # initialize
+    data = []
+    d = result["data"]
+    data.append(d)
 
     for _ in trange(n_iter):
-        result, next_page_calc_id = post_request(next_page_calc_id)
-        data = result["data"]
-        formula = [
-            datum["formula"] if "formula" in datum.keys() else "" for datum in data
-        ]
-        calc_id = [datum["calc_id"] for datum in data]
-        formulas = formulas + formula
-        calc_ids = calc_ids + calc_id
+        result, next_page_calc_id = post_request(next_page_calc_id, page_size=page_size)
+        d = result["data"]
+        data.append(d)
 
-    df = pd.DataFrame({"formula": formulas, "calc_id": calc_ids}).set_index("calc_id")
+    print(f"merging {n_iter + 1} lists")
+    data = list(chain(*data))
+
+    df = pd.DataFrame(data).set_index("calc_id")
 
     return df
 
@@ -132,3 +130,18 @@ df.to_csv("all-formula.csv")
 #     df = pd.DataFrame(data, index=[0])
 
 #     return df
+
+# formulas = [
+#     datum["formula"] if "formula" in datum.keys() else None for datum in data
+# ]
+# calc_ids = [datum["calc_id"] for datum in data]
+
+# formula = [
+#     datum["formula"] if "formula" in datum.keys() else "" for datum in data
+# ]
+# calc_id = [datum["calc_id"] for datum in data]
+# formulas = formulas + formula
+# calc_ids = calc_ids + calc_id
+
+# df = pd.DataFrame({"formula": formulas, "calc_id": calc_ids}).set_index("calc_id")
+
