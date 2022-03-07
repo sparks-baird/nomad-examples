@@ -6,7 +6,6 @@ to download all chemical formulas `chemical_composition_reduced` along with thei
 """
 import pandas as pd
 from nomad.client import ArchiveQuery
-from nomad.metainfo import units
 
 # exclude noble gases and certain radioactive elements, source: https://github.com/sparks-baird/mat_discover/blob/4e65b710b948c7ce269cc1741c12e219507aa2dd/mat_discover/utils/generate_elasticity_data.py#L74-L76
 # fmt: off
@@ -18,13 +17,13 @@ excluded_elements = [
 # %% query NOMAD database
 query = ArchiveQuery(
     # url="http://nomad-lab.eu/prod/rae/api",
-    query={"dft.code_name": "VASP"},
+    query={"$and": {"domain": "dft", "$not": {"atoms": excluded_elements}}},
     required={
-        "section_run": {
-            "section_single_configuration_calculation": {"energy_total": "*",},
-            "section_system": {"chemical_composition_reduced": "*"},
-        },
-        "section_metadata": {"calc_id": "*"},
+        # "section_run": {
+        #    "section_single_configuration_calculation[-1]": {"energy_total": "*",},
+        #    "section_system": {"chemical_composition_reduced": "*"},
+        # },
+        "section_metadata": {"calc_id": "*", "formula": "*"},
     },
     per_page=100,
     max=None,
@@ -33,32 +32,26 @@ query = ArchiveQuery(
 print(query)
 
 # %% extract values
-calc_ids = [result.section_metadata.calc_id for result in query]
-
-formulas = [
-    result.section_run[0].section_system[0].chemical_composition_reduced
-    for result in query
-]
-
-total_energies = [
-    result.section_run[0].section_single_configuration_calculation[-1].energy_total
-    if len(result.section_run) > 1
-    and len(result.section_run.section_single_configuration_calculation) > 1
-    else None
-    for result in query
-]
-
-hartree_total_energies = [
-    total_energy.to(units.hartree).m if total_energy is not None else None
-    for total_energy in total_energies
-]
+# initialize
+calc_ids = []
+formulas = []
+for i, result in enumerate(query):
+    if i % 10000 == 0:
+        print(i)
+    if result.section_metadata is not None:
+        # Checking if nested attribute exists https://stackoverflow.com/a/29855744/13697228
+        calc_ids.append(result.section_metadata.calc_id)
+        formulas.append(result.section_metadata.formula)
+    else:
+        calc_ids.append(None)
+        formulas.append(None)
 
 # %% combine and save
 df = pd.DataFrame(
     {
         "calc_id": calc_ids,
         "formula": formulas,
-        "hartree_total_energy": hartree_total_energies,
+        # "hartree_total_energy": hartree_total_energies,
     }
 )
 
@@ -107,3 +100,32 @@ df.to_csv("all-formula.csv", index=False)
 #     f"NOT (elements HAS ANY {excluded_elements})".replace("'", '"')
 # ],
 
+# calc_ids = [
+#     result.section_metadata.calc_id if result.section_metadata is not None else None
+#     for result in query
+# ]
+
+# formulas = [
+#     result.section_metadata.formula if result.section_metadata is not None else None
+#     for result in query
+# ]
+
+# formulas = [
+#    result.section_run[0].section_system[0].chemical_composition_reduced
+#    for result in query
+# ]
+
+# total_energies = [
+#    result.section_run[0].section_single_configuration_calculation[-1].energy_total
+#    if len(result.section_run) > 1
+#    and len(result.section_run.section_single_configuration_calculation) > 1
+#    else None
+#    for result in query
+# ]
+
+# hartree_total_energies = [
+#     total_energy.to(units.hartree).m if total_energy is not None else None
+#     for total_energy in total_energies
+# ]
+
+# from nomad.metainfo import units
