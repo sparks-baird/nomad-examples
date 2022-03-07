@@ -5,6 +5,7 @@ Modified from source: https://nomad-lab.eu/prod/rae/docs/archive.html#first-exam
 to download all chemical formulas `chemical_composition_reduced` along with their calculation ids `calc_id` and `total_energy`.
 """
 import pandas as pd
+from tqdm import tqdm
 from nomad.client import ArchiveQuery
 
 # exclude noble gases and certain radioactive elements, source: https://github.com/sparks-baird/mat_discover/blob/4e65b710b948c7ce269cc1741c12e219507aa2dd/mat_discover/utils/generate_elasticity_data.py#L74-L76
@@ -25,7 +26,7 @@ query = ArchiveQuery(
         # },
         "section_metadata": {"calc_id": "*", "formula": "*"},
     },
-    per_page=100,
+    per_page=3000,
     max=None,
 )
 
@@ -35,9 +36,7 @@ print(query)
 # initialize
 calc_ids = []
 formulas = []
-for i, result in enumerate(query):
-    if i % 10000 == 0:
-        print(i)
+for i, result in enumerate(tqdm(query)):
     if result.section_metadata is not None:
         # Checking if nested attribute exists https://stackoverflow.com/a/29855744/13697228
         calc_ids.append(result.section_metadata.calc_id)
