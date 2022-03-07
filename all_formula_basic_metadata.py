@@ -89,6 +89,21 @@ df = get_data(first_calc_id, page_size=page_size)
 
 df.to_csv("all-formula.csv")
 
+# keep track of repeated formula calc_id-s and track counts
+uniq_df = (
+    df.reset_index()
+    .groupby(by="formula")
+    .agg({"calc_id": lambda x: tuple(x)})
+    .reset_index()
+)
+uniq_df["count"] = uniq_df["calc_id"].apply(len)
+
+# remove "unavailable" formula and make `calc_id`-s the index
+uniq_df = uniq_df[uniq_df["formula"] != "unavailable"]
+uniq_df = uniq_df.set_index("calc_id")
+
+uniq_df.to_csv("unique-formula.csv")
+
 1 + 1
 
 # %% Code Graveyard
