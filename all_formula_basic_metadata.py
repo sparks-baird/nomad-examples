@@ -1,6 +1,14 @@
+"""Download all NOMAD formulas via basic metadata and return unique compositions.
+
+See 
+https://matsci.org/t/extract-chemical-formulas-stability-measure-identifier-from-all-nomad-entries-excluding-certain-periodic-elements/39670/5
+
+Specifically:
+https://matsci.org/t/extract-chemical-formulas-stability-measure-identifier-from-all-nomad-entries-excluding-certain-periodic-elements/39670/2?u=sgbaird
+
+"""
 from itertools import chain
 import requests
-import json
 import numpy as np
 from tqdm import trange
 import pandas as pd
@@ -31,9 +39,9 @@ def post_request(
     return_n_iter=False,
     page_size=default_page_size,
 ):
+    post_json = get_query_dict(page_start_calc_id, page_size=page_size)
     response = requests.post(
-        "http://nomad-lab.eu/prod/rae/api/v1/entries/query",
-        json=get_query_dict(page_start_calc_id, page_size=page_size),
+        "http://nomad-lab.eu/prod/rae/api/v1/entries/query", json=post_json,
     )
     result = response.json()
     next_page_calc_id = result["pagination"]["next_page_after_value"]
@@ -70,6 +78,7 @@ def get_data(page_start_calc_id, page_size=default_page_size):
     d = result["data"]
     data.append(d)
 
+    n_iter = 3
     for _ in trange(n_iter):
         result, next_page_calc_id = post_request(next_page_calc_id, page_size=page_size)
         d = result["data"]
