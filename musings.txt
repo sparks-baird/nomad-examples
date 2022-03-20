@@ -1,0 +1,7 @@
+49794-47837 = 1957 that have been experimentally observed and have an e_above_hull greater than 500 meV. 4205 where e_above_hull > 250 meV.
+
+96529-86781 = 9748 that have not been experimentally observed and have an e_above_hull greater than 500 meV. 18203 where e_above_hull > 250 meV.
+
+So there are about 5x more experimentally unobserved compounds with high e_above_hull than experimentally observed compounds. Since there are about 2x more unobserved vs. observed compounds, in a stratified sense you are ~2.5x more likely to pick out an experimentally unobserved compound in the high e_above_hull range than if you were to pick randomly.
+
+Supposedly some materials have positive formation energies. I think these are very unlikely to form with arc melting + annealing.
