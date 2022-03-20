@@ -129,3 +129,5 @@ dmypy.json
 .pyre/
 unique-formula.csv
 all-formula.csv
+unique-reduced-formula.csv
+bad-formula.csv
